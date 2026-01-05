@@ -2,11 +2,13 @@
   "name": "dual-agent-mcp",
   "version": "1.0.0",
   "description": "Dual-Agent Loop Protocol (DALP) Toolchain",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "bin": "dist/index.js",
   "scripts": {
-    "start": "tsx src/index.ts",
+    "start": "node dist/index.js",
     "build": "tsc",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "package": "npm run build && pkg . --out-path bin"
   },
   "keywords": [
     "mcp",
@@ -24,7 +26,17 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "pkg": "^5.8.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-win-x64"
+    ]
   }
 }

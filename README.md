@@ -37,7 +37,26 @@ npm start
 
 服务器将在 `http://localhost:3000` 启动，SSE 端点为 `http://localhost:3000/sse`。
 
-### 5. 启动 Agent (可选)
+### 5. 打包与独立运行 (可选)
+
+如果你希望在没有 Node.js 环境的机器上运行，可以将项目打包为独立可执行文件。
+
+**构建可执行文件**:
+
+```bash
+npm run package
+```
+
+构建完成后，`bin/` 目录下会生成适用于 Linux 和 Windows 的可执行文件：
+
+- `bin/dual-agent-mcp-linux`
+- `bin/dual-agent-mcp-win.exe`
+
+**运行**:
+
+直接运行生成的可执行文件即可启动服务器，无需安装任何依赖。
+
+### 6. 启动 Agent (可选)
 
 你可以使用内置的启动脚本来启动两个 IDEA 实例。请先配置环境变量或修改 `src/launcher.ts` 中的路径。
 

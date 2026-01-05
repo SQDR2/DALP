@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { awaitMyTurnTool, handoverWorkTool } from './tools.js'
 import { StateManager } from './state.js'
 
-const __dirname = path.join(process.cwd(), 'src')
+// const __dirname = path.join(process.cwd(), 'src')
 
 const server = Fastify()
 
