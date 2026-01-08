@@ -193,11 +193,11 @@ Agent A 调用 `handover_work` (结束任务):
 - `is_task_complete`: `true`
 - `work_summary`: "登录功能已实现并验证通过。"
 
-## VS Code 配置与使用指南
+## MCP Client 配置指南
 
-由于本系统依赖**单例状态机**来协调两个 Agent，因此**必须**启动一个独立的 Server 进程，并让两个 VS Code 实例连接到同一个 Server。
+为了让两个 Agent 共享状态，**必须**使用 SSE (Server-Sent Events) 模式连接到同一个服务器实例。
 
-### 1. 编译与启动 Server
+### 1. 启动服务器
 
 在终端中执行以下命令：
 
@@ -215,22 +215,18 @@ npm start
 - Server 将运行在 `http://localhost:3000`
 - SSE 端点为 `http://localhost:3000/sse`
 
-### 2. 配置 VS Code (以 Cline 插件为例)
+### 2. 配置 MCP Client (以 Cline 为例)
 
-假设你使用的是 **Cline** (或其他支持 MCP 的 VS Code 插件)。你需要配置它连接到我们刚才启动的 SSE Server。
+**注意：Agent A (Planner) 和 Agent B (Executor) 使用完全相同的 MCP 配置。**
 
-1.  在 VS Code 中打开 Cline 设置 (通常在 `MCP Servers` 配置文件中)。
-2.  添加如下配置：
+你需要确保两个 Agent (通常是两个独立的 IDE 窗口) 都连接到同一个 MCP Server。
+
+1.  在 VS Code 中打开 MCP 配置文件 (通常位于 `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/mcpSettings.json` 或通过插件界面打开)。
+2.  添加 `dalp-sse` 配置：
 
 ```json
 {
   "mcpServers": {
-    "dalp-server": {
-      "command": "node",
-      "args": ["path/to/your/dual-agent-mcp/dist/index.js"],
-      "disabled": true,
-      "autoApprove": []
-    },
     "dalp-sse": {
       "url": "http://localhost:3000/sse",
       "transport": "sse"
@@ -239,7 +235,20 @@ npm start
 }
 ```
 
-> **注意**: 请务必使用 `sse` 传输方式，而不是 `stdio` (command 方式)。因为 `stdio` 会为每个 VS Code 窗口启动一个新的 Server 进程，导致状态无法共享。
+> **重要**: 请勿使用 `command` (stdio) 模式启动 server，因为那样会创建独立的进程，导致 Agent A 和 Agent B 无法共享状态。
+
+### 3. 区分 Agent A 和 Agent B
+
+虽然 MCP 配置相同，但你需要通过**提示词 (Prompt)** 来区分两个 Agent 的角色：
+
+- **Agent A (Planner)**: 在初始化时，使用 [Agent A Prompt Template](#agent-a-领导者发起人) 告知它是 Agent A。
+- **Agent B (Executor)**: 在初始化时，使用 [Agent B Prompt Template](#agent-b-执行者跟随者) 告知它是 Agent B。
+
+### 4. 验证连接
+
+1.  确保服务器已启动 (`npm start`)。
+2.  在 MCP Client 中刷新或重连。
+3.  如果连接成功，你应该能在 `http://localhost:3000` 的 Dashboard 中看到连接日志，或者在终端看到 "New SSE connection request"。
 
 ### 3. 查看协作对话 (监控)
 
