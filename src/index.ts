@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import crypto from 'crypto'
 import fastifyStatic from '@fastify/static'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -34,24 +35,44 @@ mcpServer.tool(
 )
 
 // SSE Transport for MCP
-let transport: SSEServerTransport | null = null
+const transports = new Map<string, SSEServerTransport>()
 
 server.get('/sse', async (req, res) => {
-  transport = new SSEServerTransport('/message', res.raw)
+  console.log(`New SSE connection request`)
+  res.hijack()
+
+  const transport = new SSEServerTransport('/message', res.raw)
+  console.log(`Created new transport with session ID: ${transport.sessionId}`)
+
+  // Debug: Log writes
+  const originalWrite = res.raw.write.bind(res.raw)
+  res.raw.write = (chunk: any, ...args: any[]) => {
+    console.log(`Writing to session ${transport.sessionId}:`, chunk.toString())
+    return originalWrite(chunk, ...args)
+  }
+
+  transports.set(transport.sessionId, transport)
+
   await mcpServer.connect(transport)
 
   // Keep connection open
   res.raw.on('close', () => {
-    console.log('SSE connection closed')
+    console.log(`SSE connection closed for session ${transport.sessionId}`)
+    transports.delete(transport.sessionId)
   })
 })
 
 server.post('/message', async (req, res) => {
+  console.log(`Received message request`)
+  const sessionId = (req.query as any).sessionId as string
+  console.log(`Message for session: ${sessionId}`)
+  const transport = transports.get(sessionId)
+
   if (!transport) {
-    res.status(400).send('No active SSE connection')
+    res.status(404).send('Session not found')
     return
   }
-  await transport.handlePostMessage(req.raw, res.raw)
+  await transport.handlePostMessage(req.raw, res.raw, req.body)
 })
 
 // Dashboard API
@@ -62,6 +83,7 @@ server.get('/api/history', async (req, res) => {
 
 // Dashboard SSE
 server.get('/dashboard/events', (req, res) => {
+  res.hijack()
   res.raw.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -92,7 +114,7 @@ server.get('/dashboard/events', (req, res) => {
 
 const start = async () => {
   try {
-    await server.listen({ port: 3000 })
+    await server.listen({ port: 3000, host: '::' })
     console.log('Server listening on http://localhost:3000')
     console.log('SSE Endpoint: http://localhost:3000/sse')
     console.log('Dashboard: http://localhost:3000')
