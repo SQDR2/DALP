@@ -9,13 +9,23 @@ import { z } from 'zod'
 import { awaitMyTurnTool, handoverWorkTool } from './tools.js'
 import { StateManager } from './state.js'
 
-// const __dirname = path.join(process.cwd(), 'src')
+// 获取正确的 public 目录路径
+// - 开发模式 (npm run dev): __dirname = src/, public 在 ../public
+// - 打包模式 (npm run start): __dirname = dist/, public 在 ./public
+const getPublicPath = () => {
+  // 检查 dist/public 是否存在（打包模式）
+  const distPublic = path.join(__dirname, 'public')
+  const srcPublic = path.join(__dirname, '../public')
+
+  // 优先使用 dist/public，回退到 ../public
+  return require('fs').existsSync(distPublic) ? distPublic : srcPublic
+}
 
 const server = Fastify()
 
 // Register static file serving
 server.register(fastifyStatic, {
-  root: path.join(__dirname, '../public'),
+  root: getPublicPath(),
   prefix: '/', // optional: default '/'
 })
 

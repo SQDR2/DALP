@@ -6,10 +6,11 @@
   "bin": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --outfile=dist/index.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "package": "npm run build && npm run build:binary",
-    "build:binary": "node --experimental-sea-config sea-config.json && cp $(command -v node) bin/dual-agent-mcp-linux && npx postject bin/dual-agent-mcp-linux NODE_SEA_BLOB bin/sea-prep.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2"
+    "package": "npm run build && npm run package:assets",
+    "package:assets": "mkdir -p dist/public && cp -r public/* dist/public/",
+    "package:dist": "npm run package && tar -czvf dual-agent-mcp-dist.tar.gz dist/ package.json"
   },
   "keywords": [
     "mcp",
@@ -28,7 +29,6 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "esbuild": "^0.27.2",
-    "postject": "^1.0.0-alpha.6",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
   }
