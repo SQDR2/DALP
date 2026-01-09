@@ -41,7 +41,7 @@ server.get('/sse', async (req, res) => {
   console.log(`New SSE connection request`)
   res.hijack()
 
-  const transport = new SSEServerTransport('/message', res.raw)
+  const transport = new SSEServerTransport('http://localhost:3000/message', res.raw)
   console.log(`Created new transport with session ID: ${transport.sessionId}`)
 
   // Debug: Log writes
@@ -53,11 +53,26 @@ server.get('/sse', async (req, res) => {
 
   transports.set(transport.sessionId, transport)
 
+  // Heartbeat to keep connection alive (every 30 seconds)
+  const heartbeatInterval = setInterval(() => {
+    try {
+      if (!res.raw.writableEnded) {
+        res.raw.write(': heartbeat\n\n')
+      } else {
+        clearInterval(heartbeatInterval)
+      }
+    } catch (err) {
+      console.log(`Heartbeat failed for session ${transport.sessionId}:`, err)
+      clearInterval(heartbeatInterval)
+    }
+  }, 30000)
+
   await mcpServer.connect(transport)
 
   // Keep connection open
   res.raw.on('close', () => {
     console.log(`SSE connection closed for session ${transport.sessionId}`)
+    clearInterval(heartbeatInterval)
     transports.delete(transport.sessionId)
   })
 })
